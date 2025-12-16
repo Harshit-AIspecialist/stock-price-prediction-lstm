@@ -13,17 +13,38 @@ st.markdown("LSTM-based Deep Learning Model")
 # Load model (ONLY ONCE)
 model = load_model("stock_lstm_model.keras")
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_data(symbol):
-    df = yf.download(symbol, start="2018-01-01", end="2024-01-01")
-    return df
+    try:
+        df = yf.download(
+            symbol,
+            period="max",
+            interval="1d",
+            progress=False,
+            threads=False
+        )
+        return df
+    except Exception:
+        return pd.DataFrame()
+
 
 symbol = st.text_input("Enter Stock Symbol (Yahoo format)", "RELIANCE.NS")
 df = load_data(symbol)
 
-if df.empty:
-    st.error("Invalid stock symbol")
+if df.empty or len(df) < 100:
+    st.error(
+        "❌ Could not fetch data.\n\n"
+        "Possible reasons:\n"
+        "- Invalid Yahoo Finance symbol\n"
+        "- Temporary Yahoo Finance rate limit\n\n"
+        "✅ Examples:\n"
+        "- AAPL\n"
+        "- MSFT\n"
+        "- GOOG\n"
+        "- RELIANCE.NS"
+    )
     st.stop()
+
 
 # Feature engineering
 df['Return'] = df['Close'].pct_change()
